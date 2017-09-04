@@ -178,6 +178,7 @@ test('uncaught exception', t => {
 	const output = reporter.unhandledError({
 		type: 'exception',
 		file: 'test.js',
+		title: error.stack.split('\n')[0],
 		stack: beautifyStack(error.stack)
 	}, createRunStatus()).split('\n');
 
@@ -209,6 +210,7 @@ test('unhandled rejection', t => {
 	const output = reporter.unhandledError({
 		type: 'rejection',
 		file: 'test.js',
+		title: error.stack.split('\n')[0],
 		stack: beautifyStack(error.stack)
 	}, createRunStatus()).split('\n');
 
@@ -380,7 +382,7 @@ test('results with errors', t => {
 	];
 
 	const error2 = new Error('error two message');
-	error2.stack = 'error message\nTest.fn (test.js:1:1)\n';
+	error2.stack = beautifyStack('error message\nTest.fn (test.js:1:1)');
 	const err2Path = tempWrite.sync('b()');
 	error2.source = source(err2Path);
 	error2.avaAssertionError = true;
@@ -391,7 +393,7 @@ test('results with errors', t => {
 	];
 
 	const error3 = new Error('error three message');
-	error3.stack = 'error message\nTest.fn (test.js:1:1)\n';
+	error3.stack = beautifyStack('error message\nTest.fn (test.js:1:1)');
 	const err3Path = tempWrite.sync('b()');
 	error3.source = source(err3Path);
 	error3.avaAssertionError = true;
@@ -479,7 +481,7 @@ test('results with errors and disabled code excerpts', t => {
 	];
 
 	const error2 = new Error('error two message');
-	error2.stack = 'error message\nTest.fn (test.js:1:1)\n';
+	error2.stack = beautifyStack('error message\nTest.fn (test.js:1:1)\n');
 	const err2Path = tempWrite.sync('b()');
 	error2.source = source(err2Path);
 	error2.avaAssertionError = true;
@@ -553,7 +555,7 @@ test('results with errors and disabled code excerpts', t => {
 	];
 
 	const error2 = new Error('error two message');
-	error2.stack = 'error message\nTest.fn (test.js:1:1)\n';
+	error2.stack = beautifyStack('error message\nTest.fn (test.js:1:1)\n');
 	const err2Path = tempWrite.sync('b()');
 	error2.source = source(err2Path);
 	error2.avaAssertionError = true;

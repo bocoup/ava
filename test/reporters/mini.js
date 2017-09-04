@@ -291,28 +291,32 @@ test('results with passing tests and rejections', t => {
 
 	const err1 = new Error('failure one');
 	err1.type = 'rejection';
+	err1.title = err1.stack.split('\n')[0];
 	err1.stack = beautifyStack(err1.stack);
 	const err2 = new Error('failure two');
 	err2.type = 'rejection';
-	err2.stack = 'stack line with trailing whitespace\t\n';
+	err2.title = err2.stack.split('\n')[0];
+	err2.stack = 'trailingWhitespace (test.js:1:1)\r\n';
 
 	const runStatus = {
 		errors: [err1, err2]
 	};
 
 	const output = reporter.finish(runStatus);
+
 	compareLineOutput(t, output, [
 		'',
 		'  ' + chalk.green('1 passed'),
 		'  ' + chalk.red('1 rejection'),
 		'',
 		'  ' + chalk.bold.white('Unhandled Rejection'),
-		/Error: failure/,
+		/Error: failure one/,
 		/test\/reporters\/mini\.js/,
 		compareLineOutput.SKIP_UNTIL_EMPTY_LINE,
 		'',
 		'  ' + chalk.bold.white('Unhandled Rejection'),
-		'  ' + colors.stack('stack line with trailing whitespace'),
+		/Error: failure two/,
+		/trailingWhitespace.*\)$/,
 		''
 	]);
 	t.end();
@@ -325,6 +329,7 @@ test('results with passing tests and exceptions', t => {
 
 	const err = new Error('failure');
 	err.type = 'exception';
+	err.summary = err.stack.split('\n')[0];
 	err.stack = beautifyStack(err.stack);
 
 	const avaErr = new AvaError('A futuristic test runner');
@@ -364,7 +369,7 @@ test('results with errors', t => {
 	];
 
 	const err2 = new Error('failure two');
-	err2.stack = 'error message\nTest.fn (test.js:1:1)\n';
+	err2.stack = beautifyStack('error message\nTest.fn (test.js:1:1)');
 	const err2Path = tempWrite.sync('b();');
 	err2.source = source(err2Path);
 	err2.avaAssertionError = true;
@@ -375,7 +380,7 @@ test('results with errors', t => {
 	];
 
 	const err3 = new Error('failure three');
-	err3.stack = 'error message\nTest.fn (test.js:1:1)\n';
+	err3.stack = beautifyStack('error message\nTest.fn (test.js:1:1)');
 	const err3Path = tempWrite.sync('c();');
 	err3.source = source(err3Path);
 	err3.avaAssertionError = true;
@@ -465,7 +470,7 @@ test('results with errors and disabled code excerpts', t => {
 	];
 
 	const err2 = new Error('failure two');
-	err2.stack = 'error message\nTest.fn (test.js:1:1)\n';
+	err2.stack = beautifyStack('error message\nTest.fn (test.js:1:1)');
 	const err2Path = tempWrite.sync('b();');
 	err2.source = source(err2Path);
 	err2.avaAssertionError = true;
@@ -541,7 +546,7 @@ test('results with errors and broken code excerpts', t => {
 	];
 
 	const err2 = new Error('failure two');
-	err2.stack = 'error message\nTest.fn (test.js:1:1)\n';
+	err2.stack = beautifyStack('error message\nTest.fn (test.js:1:1)');
 	const err2Path = tempWrite.sync('b();');
 	err2.source = source(err2Path);
 	err2.avaAssertionError = true;
