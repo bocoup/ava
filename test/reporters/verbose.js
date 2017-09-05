@@ -35,14 +35,6 @@ function createRunStatus() {
 	};
 }
 
-function fooFunc() {
-	barFunc();
-}
-
-function barFunc() {
-	throw new Error();
-}
-
 function source(file, line) {
 	return {
 		file,
@@ -51,19 +43,6 @@ function source(file, line) {
 		isDependency: false
 	};
 }
-
-test('beautify stack - removes uninteresting lines', t => {
-	try {
-		fooFunc();
-	} catch (err) {
-		const stack = beautifyStack(err.stack);
-		t.match(stack, /fooFunc/);
-		t.match(stack, /barFunc/);
-		t.match(err.stack, /Module._compile/);
-		t.notMatch(stack, /Module\._compile/);
-		t.end();
-	}
-});
 
 test('start', t => {
 	const reporter = createReporter();
