@@ -7,10 +7,11 @@ const chalk = require('chalk');
 const sinon = require('sinon');
 const test = require('tap').test;
 const lolex = require('lolex');
-const beautifyStack = require('../../lib/beautify-stack');
+const AssertionError = require('../../lib/assert').AssertionError;
 const colors = require('../../lib/colors');
 const VerboseReporter = require('../../lib/reporters/verbose');
 const compareLineOutput = require('../helper/compare-line-output');
+const errorFromWorker = require('../helper/error-from-worker');
 const codeExcerpt = require('../../lib/code-excerpt');
 
 chalk.enabled = true;
@@ -152,14 +153,12 @@ test('todo test', t => {
 test('uncaught exception', t => {
 	const reporter = createReporter();
 
-	const error = new Error('Unexpected token');
-
-	const output = reporter.unhandledError({
+	const error = errorFromWorker(new Error('Unexpected token'), {
 		type: 'exception',
-		file: 'test.js',
-		title: error.stack.split('\n')[0],
-		stack: beautifyStack(error.stack)
-	}, createRunStatus()).split('\n');
+		file: 'test.js'
+	});
+
+	const output = reporter.unhandledError(error, createRunStatus()).split('\n');
 
 	t.is(output[0], chalk.red('Uncaught Exception: test.js'));
 	t.match(output[1], /Error: Unexpected token/);
@@ -184,14 +183,12 @@ test('ava error', t => {
 test('unhandled rejection', t => {
 	const reporter = createReporter();
 
-	const error = new Error('Unexpected token');
-
-	const output = reporter.unhandledError({
-		type: 'rejection',
+	const error = errorFromWorker(new Error('Unexpected token'), {
 		file: 'test.js',
-		title: error.stack.split('\n')[0],
-		stack: beautifyStack(error.stack)
-	}, createRunStatus()).split('\n');
+		type: 'rejection'
+	});
+
+	const output = reporter.unhandledError(error, createRunStatus()).split('\n');
 
 	t.is(output[0], chalk.red('Unhandled Rejection: test.js'));
 	t.match(output[1], /Error: Unexpected token/);
@@ -202,11 +199,10 @@ test('unhandled rejection', t => {
 test('unhandled error without stack', t => {
 	const reporter = createReporter();
 
-	const err = {
-		type: 'exception',
+	const err = errorFromWorker({message: 'test'}, {
 		file: 'test.js',
-		message: 'test'
-	};
+		type: 'exception'
+	});
 
 	const output = reporter.unhandledError(err, createRunStatus()).split('\n');
 
@@ -349,33 +345,31 @@ test('results with passing tests, rejections and exceptions', t => {
 });
 
 test('results with errors', t => {
-	const error1 = new Error('error one message');
-	error1.stack = beautifyStack(error1.stack);
+	const error1 = errorFromWorker(new AssertionError({message: 'error one message'}));
 	const err1Path = tempWrite.sync('a()');
 	error1.source = source(err1Path);
-	error1.avaAssertionError = true;
 	error1.statements = [];
 	error1.values = [
 		{label: 'actual:', formatted: JSON.stringify('abc')},
 		{label: 'expected:', formatted: JSON.stringify('abd')}
 	];
 
-	const error2 = new Error('error two message');
-	error2.stack = beautifyStack('error message\nTest.fn (test.js:1:1)');
+	const error2 = errorFromWorker(new AssertionError({message: 'error two message'}), {
+		stack: 'error message\nTest.fn (test.js:1:1)'
+	});
 	const err2Path = tempWrite.sync('b()');
 	error2.source = source(err2Path);
-	error2.avaAssertionError = true;
 	error2.statements = [];
 	error2.values = [
 		{label: 'actual:', formatted: JSON.stringify([1])},
 		{label: 'expected:', formatted: JSON.stringify([2])}
 	];
 
-	const error3 = new Error('error three message');
-	error3.stack = beautifyStack('error message\nTest.fn (test.js:1:1)');
+	const error3 = errorFromWorker(new AssertionError({message: 'error three message'}), {
+		stack: 'error message\nTest.fn (test.js:1:1)'
+	});
 	const err3Path = tempWrite.sync('b()');
 	error3.source = source(err3Path);
-	error3.avaAssertionError = true;
 	error3.statements = [];
 	error3.values = [
 		{label: 'error three message:', formatted: JSON.stringify([1])}
@@ -450,20 +444,19 @@ test('results with errors', t => {
 });
 
 test('results with errors and disabled code excerpts', t => {
-	const error1 = new Error('error one message');
-	error1.stack = beautifyStack(error1.stack);
-	error1.avaAssertionError = true;
+	const error1 = errorFromWorker(new AssertionError({message: 'error one message'}));
+	delete error1.source;
 	error1.statements = [];
 	error1.values = [
 		{label: 'actual:', formatted: JSON.stringify('abc')},
 		{label: 'expected:', formatted: JSON.stringify('abd')}
 	];
 
-	const error2 = new Error('error two message');
-	error2.stack = beautifyStack('error message\nTest.fn (test.js:1:1)\n');
+	const error2 = errorFromWorker(new AssertionError({message: 'error two message'}), {
+		stack: 'error message\nTest.fn (test.js:1:1)\n'
+	});
 	const err2Path = tempWrite.sync('b()');
 	error2.source = source(err2Path);
-	error2.avaAssertionError = true;
 	error2.statements = [];
 	error2.values = [
 		{label: 'actual:', formatted: JSON.stringify([1])},
@@ -522,22 +515,20 @@ test('results with errors and disabled code excerpts', t => {
 });
 
 test('results with errors and disabled code excerpts', t => {
-	const error1 = new Error('error one message');
-	error1.stack = beautifyStack(error1.stack);
+	const error1 = errorFromWorker(new AssertionError({message: 'error one message'}));
 	const err1Path = tempWrite.sync('a();');
 	error1.source = source(err1Path, 10);
-	error1.avaAssertionError = true;
 	error1.statements = [];
 	error1.values = [
 		{label: 'actual:', formatted: JSON.stringify('abc')},
 		{label: 'expected:', formatted: JSON.stringify('abd')}
 	];
 
-	const error2 = new Error('error two message');
-	error2.stack = beautifyStack('error message\nTest.fn (test.js:1:1)\n');
+	const error2 = errorFromWorker(new AssertionError({message: 'error two message'}), {
+		stack: 'error message\nTest.fn (test.js:1:1)\n'
+	});
 	const err2Path = tempWrite.sync('b()');
 	error2.source = source(err2Path);
-	error2.avaAssertionError = true;
 	error2.statements = [];
 	error2.values = [
 		{label: 'actual:', formatted: JSON.stringify([1])},
@@ -869,11 +860,9 @@ test('failed test with logs', t => {
 });
 
 test('results with errors and logs', t => {
-	const error1 = new Error('error one message');
-	error1.stack = beautifyStack(error1.stack);
+	const error1 = errorFromWorker(new AssertionError({message: 'error one message'}));
 	const err1Path = tempWrite.sync('a()');
 	error1.source = source(err1Path);
-	error1.avaAssertionError = true;
 	error1.statements = [];
 	error1.values = [
 		{label: 'actual:', formatted: JSON.stringify('abc')},
